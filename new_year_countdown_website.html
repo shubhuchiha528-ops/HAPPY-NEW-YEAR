@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Year 2026 Countdown</title>
+<style>
+body{
+  margin:0;font-family:Arial,Helvetica,sans-serif;
+  background:radial-gradient(circle at top,#0f2027,#203a43,#2c5364);
+  color:#fff;text-align:center;overflow-x:hidden;
+}
+
+h1,h2,h3{margin:16px 0}
+#countdown{font-size:2.2rem;margin-top:30px}
+.hidden{display:none}
+
+/* Rockets */
+.rocket{position:fixed;bottom:-40px;width:6px;height:20px;background:#ffdd00;animation:fly 2s linear infinite}
+@keyframes fly{to{transform:translateY(-120vh);opacity:0}}
+
+/* Confetti */
+.confetti{position:fixed;width:8px;height:8px;top:-10px;animation:fall 4s linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+
+/* Cake */
+.cake{margin:25px auto;width:180px}
+.layer{height:35px;background:#ff8fab;border-radius:5px;margin:5px 0}
+.cream{height:14px;background:#fff;border-radius:10px}
+
+/* Puzzle */
+#puzzle{margin-top:30px}
+.puzzle-grid{display:grid;grid-template-columns:repeat(3,90px);gap:4px;justify-content:center;margin:auto}
+.tile{width:90px;height:90px;background-image:url('https://picsum.photos/300');background-size:270px 270px;border-radius:6px;cursor:pointer}
+.tile.empty{background:none;cursor:default}
+
+/* Popup */
+#popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:10}
+#popupContent{background:#fff;color:#000;padding:20px;border-radius:12px;max-width:300px}
+
+/* Music button */
+#musicBtn{position:fixed;top:10px;right:10px;padding:8px 12px;border-radius:20px;border:none;cursor:pointer}
+
+textarea{width:85%;max-width:420px;height:100px;border-radius:8px;padding:10px;border:none}
+
+/* Mobile tweaks */
+@media(max-width:480px){
+  .puzzle-grid{grid-template-columns:repeat(3,70px)}
+  .tile{width:70px;height:70px;background-size:210px 210px}
+  #countdown{font-size:1.8rem}
+}
+</style>
+</head>
+<body>
+
+<button id="musicBtn" onclick="toggleMusic()">🔊 Music</button>
+
+<h1>🎉 Countdown to New Year 2026 🎉</h1>
+<div id="countdown"></div>
+
+<div id="newYear" class="hidden">
+<h2>✨ Happy New Year 2026 ✨</h2>
+
+<div class="cake">
+<div class="cream"></div><div class="layer"></div>
+<div class="cream"></div><div class="layer"></div>
+<div class="cream"></div><div class="layer"></div>
+</div>
+
+<div id="puzzle">
+<h3>🧩 Sliding Image Puzzle</h3>
+<div class="puzzle-grid" id="grid"></div>
+</div>
+
+<h3>✍️ Your New Year Message</h3>
+<p style="font-size:0.9rem;opacity:0.8">(Only you can edit • Others can only view)</p>
+<input type="password" id="editPass" placeholder="Enter owner password" style="padding:8px;border-radius:6px;border:none"><br><br>
+<textarea id="messageBox" readonly placeholder="Your New Year message will appear here..."></textarea>
+<br><br>
+<button onclick="unlockEdit()">Unlock Editing</button>
+</div>
+
+<div id="popup" class="hidden">
+<div id="popupContent">
+<h3>🏆 Puzzle Solved!</h3>
+<p>May 2026 bring you happiness, success and joy 🎉</p>
+<button onclick="closePopup()">Close</button>
+</div>
+</div>
+
+<audio id="bgMusic" loop src="https://cdn.pixabay.com/audio/2022/08/26/audio_efcfa9b6b2.mp3"></audio>
+<audio id="fireSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_4c7d08c82d.mp3"></audio>
+
+<script>
+const countdownEl=document.getElementById('countdown');
+const newYearEl=document.getElementById('newYear');
+const grid=document.getElementById('grid');
+const popup=document.getElementById('popup');
+const bgMusic=document.getElementById('bgMusic');
+const fireSound=document.getElementById('fireSound');
+let musicOn=true;
+
+const target=new Date('January 1, 2026 00:00:00').getTime();
+setInterval(()=>{
+  const now=Date.now();
+  const diff=target-now;
+  if(diff<=0){
+    countdownEl.classList.add('hidden');
+    newYearEl.classList.remove('hidden');
+    fireSound.play();bgMusic.play();
+    launchRockets();launchConfetti();
+  }else{
+    const d=Math.floor(diff/(1000*60*60*24));
+    const h=Math.floor(diff/(1000*60*60)%24);
+    const m=Math.floor(diff/(1000*60)%60);
+    const s=Math.floor(diff/1000%60);
+    countdownEl.innerHTML=`${d}d ${h}h ${m}m ${s}s`;
+  }
+},1000);
+
+/* Sliding puzzle */
+let tiles=[...Array(8).keys()].map(i=>i+1).concat(0);
+function shuffle(){tiles.sort(()=>Math.random()-0.5)}
+function render(){grid.innerHTML='';tiles.forEach((n,i)=>{
+  const d=document.createElement('div');
+  d.className='tile'+(n===0?' empty':'');
+  if(n!==0){
+    const x=(n-1)%3,y=Math.floor((n-1)/3);
+    d.style.backgroundPosition=`-${x*90}px -${y*90}px`;
+  }
+  d.onclick=()=>move(i);grid.appendChild(d);
+})}
+function move(i){
+  const e=tiles.indexOf(0);
+  const valid=[i-1,i+1,i-3,i+3];
+  if(valid.includes(e)){
+    [tiles[i],tiles[e]]=[tiles[e],tiles[i]];
+    render();checkSolved();
+  }
+}
+function checkSolved(){
+  if(tiles.slice(0,8).every((v,i)=>v===i+1)) popup.classList.remove('hidden');
+}
+shuffle();render();
+
+function closePopup(){popup.classList.add('hidden')}
+function toggleMusic(){musicOn=!musicOn;musicOn?bgMusic.play():bgMusic.pause()}
+
+function launchRockets(){for(let i=0;i<15;i++){const r=document.createElement('div');r.className='rocket';r.style.left=Math.random()*100+'vw';document.body.appendChild(r);setTimeout(()=>r.remove(),3000)}}
+function launchConfetti(){for(let i=0;i<30;i++){const c=document.createElement('div');c.className='confetti';c.style.left=Math.random()*100+'vw';c.style.background=`hsl(${Math.random()*360},100%,50%)`;document.body.appendChild(c);setTimeout(()=>c.remove(),4000)}}
+</script>
+</body>
+</html>
